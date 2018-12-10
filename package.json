@@ -1,0 +1,30 @@
+{
+  "name": "node_exercize",
+  "version": "1.0.0",
+  "description": "exercise_in_javascript",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "build": "babel src -o app.js",
+    "test": "beefy test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DudduYum/node_exercize.git"
+  },
+  "author": "Rostyslav Kostyuk",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DudduYum/node_exercize/issues"
+  },
+  "homepage": "https://github.com/DudduYum/node_exercize#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.0",
+    "@babel/core": "^7.2.0",
+    "@babel/preset-env": "^7.2.0"
+  }
+}
