@@ -17,16 +17,35 @@ class Plane {
 
 	getPoints () {
 		var pointsArray = [];
+
 		for (var i = 0; i < this.points.length; i++) {
 			pointsArray.push(
 				{
-					x: this.points[i].position.x,
-					y: this.points[i].position.y,
+					x: this.points[i].x,
+					y: this.points[i].y,
 					quantity: this.quantity[i]
 				}
 			);
 		}
-		return this.points;
+		return pointsArray;
+	}
+
+	getLinesWithPoints (numOfPoints) {
+		this.lines.filter( // to get all lines that
+			line => {
+				return numOfPoints === line.reduce( // summary of all points
+					(acc, singlePoint) => {
+						acc += this.quantity[singlePoint];
+					},
+					0
+				);
+			}
+		);
+	}
+
+	test () {
+		console.log('points', this.points);
+		console.log('lines', this.lines);
 	}
 
 	addPoint (x, y) {
@@ -61,6 +80,17 @@ class Plane {
       // In the second case the points of the line may be or may be not connected
       // to the point through some line. So I need to filter all points that are
       // connected to the current point and keep those that are not connected
+			console.log(this.lines.filter(item => this.lines[i].addPoint(pIndex)));
+			console.log(this.lines.filter(item => this.lines[i].addPoint(pIndex))
+			.reduce( // will return an object with unic keys
+				(acc, item) => {
+					acc.pool.map(point => {
+						acc[point] = true;
+					});
+					return acc;
+				},
+				{}
+			));
 			Object.keys(
 				this.lines.filter(item => this.lines[i].addPoint(pIndex))
 				.reduce( // will return an object with unic keys
@@ -125,24 +155,20 @@ class Line {
 
 // export default Plane;
 
+/* globals Plane */
+
 // import Plane from './logic';
 
 var express = require('express');
 var app = express();
 var bParser = require('body-parser');
-var path = require('path');
+// var path = require('path');
 
 var pointsForTest = [
 	{x: 3, y: 5},
 	{x: 15, y: 178},
 	{x: 3, y: 5},
 	{x: 43, y: 0}
-];
-
-
-const errors = [
-	'no errors',
-	'wrong coordinates'
 ];
 
 app.use(bParser.urlencoded({ extended: true }));
@@ -220,17 +246,30 @@ router.route('/space')
 
 // line numbers
 router.route(`/lines/${chars['{']}:num${chars['}']}`)
-.get(function (req, res) {
-	res.json({
-		'line': {}
-	});
+.get(
+	(req, res) => {
+		res.json({
+			'line': {}
+		}
+	);
 });
+
+//test
+router.route(`/test`)
+.get(
+	(req, res) => {
+		plane.test();
+		res.json({
+			'test': 'look at terminal'
+		});
+	}
+);
 
 router.use(errorHandler);
 
 // router.all('/*', function (req, res) {
 // 	console.log('specific handler');
-// });I
+// });
 function errorHandler (err, req, res, next) {
 	res.status(500);
 	res.json(

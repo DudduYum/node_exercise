@@ -17,16 +17,35 @@ class Plane {
 
 	getPoints () {
 		var pointsArray = [];
+
 		for (var i = 0; i < this.points.length; i++) {
 			pointsArray.push(
 				{
-					x: this.points[i].position.x,
-					y: this.points[i].position.y,
+					x: this.points[i].x,
+					y: this.points[i].y,
 					quantity: this.quantity[i]
 				}
 			);
 		}
-		return this.points;
+		return pointsArray;
+	}
+
+	getLinesWithPoints (numOfPoints) {
+		this.lines.filter( // to get all lines that
+			line => {
+				return numOfPoints === line.reduce( // summary of all points
+					(acc, singlePoint) => {
+						acc += this.quantity[singlePoint];
+					},
+					0
+				);
+			}
+		);
+	}
+
+	test () {
+		console.log('points', this.points);
+		console.log('lines', this.lines);
 	}
 
 	addPoint (x, y) {
@@ -61,7 +80,20 @@ class Plane {
       // In the second case the points of the line may be or may be not connected
       // to the point through some line. So I need to filter all points that are
       // connected to the current point and keep those that are not connected
-			Object.keys(
+			console.log(this.lines.filter(item => this.lines[i].addPoint(pIndex)));
+			console.log(this.lines.filter(item => this.lines[i].addPoint(pIndex))
+			.reduce( // will return an object with unic keys
+				(acc, item) => {
+					acc.pool.map(point => {
+						acc[point] = true;
+					});
+					return acc;
+				},
+				{}
+			));
+
+			const notGood = Object.keys( // all points that are olready connected
+        // to new point through new point
 				this.lines.filter(item => this.lines[i].addPoint(pIndex))
 				.reduce( // will return an object with unic keys
 					(acc, item) => {
@@ -72,13 +104,18 @@ class Plane {
 					},
 					{}
 				)
-			).map(point => {
+			)
+
+			.map(point => {
 				// I use the code above to get all points that are not connected with line
 				// segment to the new point, though the new line segments must be created
 				this.lines.push(
 					new Line(this, pIndex, point)
 				);
 			});
+
+      // magic
+
 		}
 	}
 }

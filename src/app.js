@@ -1,21 +1,17 @@
+/* globals Plane */
+
 // import Plane from './logic';
 
 var express = require('express');
 var app = express();
 var bParser = require('body-parser');
-var path = require('path');
+// var path = require('path');
 
 var pointsForTest = [
 	{x: 3, y: 5},
 	{x: 15, y: 178},
 	{x: 3, y: 5},
 	{x: 43, y: 0}
-];
-
-
-const errors = [
-	'no errors',
-	'wrong coordinates'
 ];
 
 app.use(bParser.urlencoded({ extended: true }));
@@ -93,17 +89,30 @@ router.route('/space')
 
 // line numbers
 router.route(`/lines/${chars['{']}:num${chars['}']}`)
-.get(function (req, res) {
-	res.json({
-		'line': {}
-	});
+.get(
+	(req, res) => {
+		res.json({
+			'line': {}
+		}
+	);
 });
+
+//test
+router.route(`/test`)
+.get(
+	(req, res) => {
+		plane.test();
+		res.json({
+			'test': 'look at terminal'
+		});
+	}
+);
 
 router.use(errorHandler);
 
 // router.all('/*', function (req, res) {
 // 	console.log('specific handler');
-// });I
+// });
 function errorHandler (err, req, res, next) {
 	res.status(500);
 	res.json(

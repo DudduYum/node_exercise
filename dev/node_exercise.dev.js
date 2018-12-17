@@ -36,18 +36,37 @@ function () {
 
       for (var i = 0; i < this.points.length; i++) {
         pointsArray.push({
-          x: this.points[i].position.x,
-          y: this.points[i].position.y,
+          x: this.points[i].x,
+          y: this.points[i].y,
           quantity: this.quantity[i]
         });
       }
 
-      return this.points;
+      return pointsArray;
+    }
+  }, {
+    key: "getLinesWithPoints",
+    value: function getLinesWithPoints(numOfPoints) {
+      var _this = this;
+
+      this.lines.filter( // to get all lines that
+      function (line) {
+        return numOfPoints === line.reduce( // summary of all points
+        function (acc, singlePoint) {
+          acc += _this.quantity[singlePoint];
+        }, 0);
+      });
+    }
+  }, {
+    key: "test",
+    value: function test() {
+      console.log('points', this.points);
+      console.log('lines', this.lines);
     }
   }, {
     key: "addPoint",
     value: function addPoint(x, y) {
-      var _this = this;
+      var _this2 = this;
 
       var p = new MathDS.Vector2(x, y);
       var isDuplicate = false;
@@ -78,8 +97,20 @@ function () {
         // to the point through some line. So I need to filter all points that are
         // connected to the current point and keep those that are not connected
 
+        console.log(this.lines.filter(function (item) {
+          return _this2.lines[i].addPoint(pIndex);
+        }));
+        console.log(this.lines.filter(function (item) {
+          return _this2.lines[i].addPoint(pIndex);
+        }).reduce( // will return an object with unic keys
+        function (acc, item) {
+          acc.pool.map(function (point) {
+            acc[point] = true;
+          });
+          return acc;
+        }, {}));
         Object.keys(this.lines.filter(function (item) {
-          return _this.lines[i].addPoint(pIndex);
+          return _this2.lines[i].addPoint(pIndex);
         }).reduce( // will return an object with unic keys
         function (acc, item) {
           acc.pool.map(function (point) {
@@ -89,7 +120,7 @@ function () {
         }, {})).map(function (point) {
           // I use the code above to get all points that are not connected with line
           // segment to the new point, though the new line segments must be created
-          _this.lines.push(new Line(_this, pIndex, point));
+          _this2.lines.push(new Line(_this2, pIndex, point));
         });
       }
     }
@@ -136,6 +167,8 @@ function () {
 
   return Line;
 }(); // export default Plane;
+
+/* globals Plane */
 // import Plane from './logic';
 
 
@@ -143,9 +176,8 @@ var express = require('express');
 
 var app = express();
 
-var bParser = require('body-parser');
+var bParser = require('body-parser'); // var path = require('path');
 
-var path = require('path');
 
 var pointsForTest = [{
   x: 3,
@@ -160,7 +192,6 @@ var pointsForTest = [{
   x: 43,
   y: 0
 }];
-var errors = ['no errors', 'wrong coordinates'];
 app.use(bParser.urlencoded({
   extended: true
 }));
@@ -227,10 +258,17 @@ router.route("/lines/".concat(chars['{'], ":num").concat(chars['}'])).get(functi
   res.json({
     'line': {}
   });
+}); //test
+
+router.route("/test").get(function (req, res) {
+  plane.test();
+  res.json({
+    'test': 'look at terminal'
+  });
 });
 router.use(errorHandler); // router.all('/*', function (req, res) {
 // 	console.log('specific handler');
-// });I
+// });
 
 function errorHandler(err, req, res, next) {
   res.status(500);
