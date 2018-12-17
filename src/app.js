@@ -1,7 +1,17 @@
+// import Plane from './logic';
+
 var express = require('express');
 var app = express();
 var bParser = require('body-parser');
 var path = require('path');
+
+var pointsForTest = [
+	{x: 3, y: 5},
+	{x: 15, y: 178},
+	{x: 3, y: 5},
+	{x: 43, y: 0}
+];
+
 
 const errors = [
 	'no errors',
@@ -11,8 +21,6 @@ const errors = [
 app.use(bParser.urlencoded({ extended: true }));
 app.use(bParser.json([]));
 
-var points = [];
-
 // special character managment
 var chars = {};
 chars['{'] = encodeURIComponent('{');
@@ -21,19 +29,25 @@ chars[','] = encodeURIComponent(',');
 chars['"'] = encodeURIComponent('"');
 chars[' '] = encodeURIComponent(' ');
 
-console.log('test');
 // pattern mana
 var pat = {};
 pat.wSp = '(' + chars[' '] + ')+';
 pat.wSs = '(' + chars[' '] + ')*';
+
+// logic
+var plane = new Plane();
+// init palne
+pointsForTest.map(
+	item => {
+		plane.addPoint(item.x, item.y);
+	}
+);
 
 // init router
 var router = express.Router();
 
 // jsut for debug
 router.use(function (req, res, next) {
-	console.log(`/${pat.wSp}point${pat.wSp}with${pat.wSp}body${pat.wSp}${chars['{']}${pat.wSp}x${pat.wSp}\:${pat.wSp}:x${pat.wSp},${pat.wSp}y${pat.wSp}\:${pat.wSp}:y${pat.wSp}${chars['}']}`);
-	console.log(`/lines/:num`);
 	next();
 });
 
@@ -46,15 +60,15 @@ router.get('/', function (req, res) {
 // add a point with body
 router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}${chars[' ']}${chars['"']}x${chars['"']}\\:${chars[' ']}:x,${chars[' ']}${chars['"']}y${chars['"']}\\:${chars[' ']}:y${chars[' ']}${chars['}']}`)
 .post(function (req, res, next) {
-	const xNumber = Number.parseFloat(req.params.x);
-	const yNumber = Number.parseFloat(req.params.y);
+	const xNumber = Number.parseInt(req.params.x);
+	const yNumber = Number.parseInt(req.params.y);
 
 	if (Number.isNaN(xNumber) || Number.isNaN(yNumber)) {
 		next(new Error(1));
 	}
-
   // so far everything is ok
-	
+	plane.addPoint(xNumber, yNumber);
+
 	res.json({
 		'msg': 'Point has been added',
 		'x': xNumber,
@@ -62,23 +76,16 @@ router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}
 	});
 });
 
-router.route(`/test${pat.wSp}${chars['{']}x(abc)+[(:)]:x${chars['}']}`)
-.post(function (req, res) {
-	console.log(req.params.x);
-	res.json({
-		'msg': 'demonio'
-	});
-});
-
 // view & delete all points
 router.route('/space')
 .get(function (req, res) {
 	res.json({
-		'points': points
+		'points': plane.getPoints()
 	});
 })
 .delete(function (req, res) {
-	points = [];
+  // delete points from plane
+	plane.deleteAll();
 	res.json({
 		'msg': 'the space is empty now'
 	});

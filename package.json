@@ -1,13 +1,20 @@
 {
-  "name": "node_exercize",
+  "name": "node_exercise",
   "version": "1.0.0",
   "description": "exercise_in_javascript",
-  "main": "app.js",
+  "main": "dist/app.js",
   "scripts": {
-    "start": "node app.js",
-    "build": "babel src -o app.js",
-		"rebuild": "npm run build ; npm run start",
-    "test": "nodemon rebuild"
+    "start": "node ./dist/node_exercise.min.js",
+    "test": "node -r source-map-support/register ./dist/node_exercise.min.js",
+    "build": "grunt",
+		"testConcat": "node -r source-map-support/register ./dev/node_exercise.js",
+		"testBabel": "node -r source-map-support/register ./dev/node_exercise.dev.js"
+  },
+  "jshintConfig": {
+    "globals": {
+      "grunt": true
+    },
+    "esversion": 6
   },
   "repository": {
     "type": "git",
@@ -21,12 +28,20 @@
   "homepage": "https://github.com/DudduYum/node_exercize#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "math-ds": "^1.1.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
-    "nodemon": "^1.18.7"
+    "grunt": "^1.0.3",
+    "grunt-babel": "^8.0.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-jshint": "^2.0.0",
+    "grunt-contrib-uglify": "^4.0.0",
+    "grunt-contrib-watch": "^1.1.0",
+    "load-grunt-tasks": "^4.0.0",
+    "source-map-support": "^0.5.9"
   }
 }
