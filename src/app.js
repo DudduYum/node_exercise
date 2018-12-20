@@ -5,14 +5,29 @@
 var express = require('express');
 var app = express();
 var bParser = require('body-parser');
-// var path = require('path');
+var fs = require('fs');
 
-var pointsForTest = [
-	{x: 3, y: 5},
-	{x: 15, y: 178},
-	{x: 3, y: 5},
-	{x: 43, y: 0}
-];
+const dataPath = './data/plane.json';
+
+if (!fs.existsSync(dataPath)) {
+	fs.writeFileSync(
+		dataPath,
+		{}.toString(),
+		{
+			flag: 'w'
+		}
+	);
+}
+
+var pointsForTest = JSON.parse(
+	fs.readFileSync(
+		dataPath,
+		{
+			encoding: 'utf8',
+			flag: 'r'
+		}
+	)
+);
 
 app.use(bParser.urlencoded({ extended: true }));
 app.use(bParser.json([]));
@@ -54,10 +69,11 @@ router.get('/', function (req, res) {
 });
 
 // add a point with body
-router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}${chars[' ']}${chars['"']}x${chars['"']}\\:${chars[' ']}:x,${chars[' ']}${chars['"']}y${chars['"']}\\:${chars[' ']}:y${chars[' ']}${chars['}']}`)
+// router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}${chars[' ']}${chars['"']}x${chars['"']}\\:${chars[' ']}:x,${chars[' ']}${chars['"']}y${chars['"']}\\:${chars[' ']}:y${chars[' ']}${chars['}']}`)
+router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}${chars[' ']}${chars['"']}x${chars['"']}\\:${chars[' ']}:x,${chars[' ']}${chars['"']}y${chars['"']}\\:${chars[' ']}:y${chars['}']}`)
 .post(function (req, res, next) {
-	const xNumber = Number.parseInt(req.params.x);
-	const yNumber = Number.parseInt(req.params.y);
+	const xNumber = Number.parseFloat(req.params.x);
+	const yNumber = Number.parseFloat(req.params.y);
 
 	if (Number.isNaN(xNumber) || Number.isNaN(yNumber)) {
 		next(new Error(1));
@@ -90,12 +106,21 @@ router.route('/space')
 // line numbers
 router.route(`/lines/${chars['{']}:num${chars['}']}`)
 .get(
-	(req, res) => {
-		res.json({
-			'line': {}
+	(req, res, next) => {
+		const nNumber = Number.parseInt(req.params.num);
+
+		if (Number.isNaN(nNumber)) {
+			next(new Error(1));
 		}
-	);
-});
+
+		console.log(plane.getLinesWithPoints(nNumber));
+		res.json(
+			{
+				'line': plane.getLinesWithPoints(nNumber)
+			}
+		);
+	}
+);
 
 //test
 router.route(`/test`)

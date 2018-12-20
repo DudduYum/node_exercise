@@ -30,6 +30,15 @@ function () {
       this.initData();
     }
   }, {
+    key: "getPoint",
+    value: function getPoint(index) {
+      if (!this.points[index]) {
+        throw new Error('missing point');
+      }
+
+      return this.points[index];
+    }
+  }, {
     key: "getPoints",
     value: function getPoints() {
       var pointsArray = [];
@@ -49,12 +58,17 @@ function () {
     value: function getLinesWithPoints(numOfPoints) {
       var _this = this;
 
-      this.lines.filter( // to get all lines that
+      return this.lines.filter( // to get all lines that
       function (line) {
-        return numOfPoints === line.reduce( // summary of all points
+        return numOfPoints === line.pool.reduce( // summary of all points
         function (acc, singlePoint) {
           acc += _this.quantity[singlePoint];
+          return acc;
         }, 0);
+      }).map(function (line) {
+        return line.pool.map(function (point) {
+          return _this.points[point];
+        });
       });
     }
   }, {
@@ -66,8 +80,6 @@ function () {
   }, {
     key: "addPoint",
     value: function addPoint(x, y) {
-      var _this2 = this;
-
       var p = new MathDS.Vector2(x, y);
       var isDuplicate = false;
 
@@ -97,31 +109,32 @@ function () {
         // to the point through some line. So I need to filter all points that are
         // connected to the current point and keep those that are not connected
 
-        console.log(this.lines.filter(function (item) {
-          return _this2.lines[i].addPoint(pIndex);
-        }));
-        console.log(this.lines.filter(function (item) {
-          return _this2.lines[i].addPoint(pIndex);
-        }).reduce( // will return an object with unic keys
+        var notGood = this.lines.filter(function (item) {
+          return item.addPoint(pIndex);
+        }) // all points that are olready connected
+        // to new point through new point
+        .reduce( // will return an object with unic keys
         function (acc, item) {
-          acc.pool.map(function (point) {
+          item.pool.map(function (point) {
             acc[point] = true;
           });
           return acc;
-        }, {}));
-        Object.keys(this.lines.filter(function (item) {
-          return _this2.lines[i].addPoint(pIndex);
-        }).reduce( // will return an object with unic keys
-        function (acc, item) {
-          acc.pool.map(function (point) {
-            acc[point] = true;
-          });
-          return acc;
-        }, {})).map(function (point) {
-          // I use the code above to get all points that are not connected with line
-          // segment to the new point, though the new line segments must be created
-          _this2.lines.push(new Line(_this2, pIndex, point));
-        });
+        }, {}); // console.log('notGood', notGood);
+
+        for (i = 0; i < this.points.length; i++) {
+          if (i !== pIndex && !notGood[i]) {
+            this.lines.push(new Line(this, pIndex, i));
+          }
+        } // this.points.map(
+        // 	point => {
+        // 		// I use the code above to get all points that are not connected with line
+        // 		// segment to the new point, though the new line segments must be created
+        // 		this.lines.push(
+        // 			new Line(this, pIndex, point)
+        // 		);
+        // 	}
+        // );
+
       }
     }
   }]);
@@ -138,7 +151,7 @@ function () {
     this.plane = plane;
     this.center = this.plane.getPoint(a);
     this.vertex = this.plane.getPoint(b);
-    this.distanceV = MathDS.Vector2(this.vertex, this.center).normalize();
+    this.distanceV = new MathDS.Vector2().subVectors(this.vertex, this.center).normalize();
     this.pool = [a, b];
   } // p is an index inside plane.points array, and addPoint return true
   // only if the point belog to the line
@@ -147,7 +160,7 @@ function () {
   _createClass(Line, [{
     key: "addPoint",
     value: function addPoint(p) {
-      var res = this.isOnTheSameAxies(p);
+      var res = this.isOnTheSameAxis(p);
 
       if (res) {
         this.pool.push(p);
@@ -159,9 +172,12 @@ function () {
     key: "isOnTheSameAxis",
     value: function isOnTheSameAxis(p) {
       var point = this.plane.getPoint(p);
-      var differenceFromCenter = MathDS.Vector2(point, this.center).normalize();
+      console.log("confronto (x,".concat(this.center.x, " y,").concat(this.center.y, "====x:").concat(this.vertex.x, ",y:").concat(this.vertex.y, ") +++++ (x:").concat(point.x, ", y:").concat(point.y, ")"));
+      var differenceFromCenter = new MathDS.Vector2().subVectors(point, this.center).normalize();
       var negativeDifferenceFromCenter = differenceFromCenter.negate();
-      return this.distanceV.dot(differenceFromCenter) === 1 || this.distanceV.dot(negativeDifferenceFromCenter) === 1;
+      console.log('this.distanceV.dot(differenceFromCenter)', this.distanceV.dot(differenceFromCenter));
+      console.log('this.distanceV.dot(negativeDifferenceFromCenter)', this.distanceV.dot(negativeDifferenceFromCenter));
+      return Math.abs(this.distanceV.dot(differenceFromCenter)) >= 0.995 || Math.abs(this.distanceV.dot(negativeDifferenceFromCenter)) >= 0.995;
     }
   }]);
 
@@ -176,22 +192,22 @@ var express = require('express');
 
 var app = express();
 
-var bParser = require('body-parser'); // var path = require('path');
+var bParser = require('body-parser');
 
+var fs = require('fs');
 
-var pointsForTest = [{
-  x: 3,
-  y: 5
-}, {
-  x: 15,
-  y: 178
-}, {
-  x: 3,
-  y: 5
-}, {
-  x: 43,
-  y: 0
-}];
+var dataPath = './data/plane.json';
+
+if (!fs.existsSync(dataPath)) {
+  fs.writeFileSync(dataPath, {}.toString(), {
+    flag: 'w'
+  });
+}
+
+var pointsForTest = JSON.parse(fs.readFileSync(dataPath, {
+  encoding: 'utf8',
+  flag: 'r'
+}));
 app.use(bParser.urlencoded({
   extended: true
 }));
@@ -224,10 +240,11 @@ router.get('/', function (req, res) {
     'api/': ''
   });
 }); // add a point with body
+// router.route(`/point${chars[' ']}with${chars[' ']}body${chars[' ']}${chars['{']}${chars[' ']}${chars['"']}x${chars['"']}\\:${chars[' ']}:x,${chars[' ']}${chars['"']}y${chars['"']}\\:${chars[' ']}:y${chars[' ']}${chars['}']}`)
 
-router.route("/point".concat(chars[' '], "with").concat(chars[' '], "body").concat(chars[' ']).concat(chars['{']).concat(chars[' ']).concat(chars['"'], "x").concat(chars['"'], "\\:").concat(chars[' '], ":x,").concat(chars[' ']).concat(chars['"'], "y").concat(chars['"'], "\\:").concat(chars[' '], ":y").concat(chars[' ']).concat(chars['}'])).post(function (req, res, next) {
-  var xNumber = Number.parseInt(req.params.x);
-  var yNumber = Number.parseInt(req.params.y);
+router.route("/point".concat(chars[' '], "with").concat(chars[' '], "body").concat(chars[' ']).concat(chars['{']).concat(chars[' ']).concat(chars['"'], "x").concat(chars['"'], "\\:").concat(chars[' '], ":x,").concat(chars[' ']).concat(chars['"'], "y").concat(chars['"'], "\\:").concat(chars[' '], ":y").concat(chars['}'])).post(function (req, res, next) {
+  var xNumber = Number.parseFloat(req.params.x);
+  var yNumber = Number.parseFloat(req.params.y);
 
   if (Number.isNaN(xNumber) || Number.isNaN(yNumber)) {
     next(new Error(1));
@@ -254,9 +271,16 @@ router.route('/space').get(function (req, res) {
   });
 }); // line numbers
 
-router.route("/lines/".concat(chars['{'], ":num").concat(chars['}'])).get(function (req, res) {
+router.route("/lines/".concat(chars['{'], ":num").concat(chars['}'])).get(function (req, res, next) {
+  var nNumber = Number.parseInt(req.params.num);
+
+  if (Number.isNaN(nNumber)) {
+    next(new Error(1));
+  }
+
+  console.log(plane.getLinesWithPoints(nNumber));
   res.json({
-    'line': {}
+    'line': plane.getLinesWithPoints(nNumber)
   });
 }); //test
 
